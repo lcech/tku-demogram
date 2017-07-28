@@ -24,7 +24,7 @@
     <meta name="msapplication-TileColor" content="#ffffff">
     <meta name="msapplication-TileImage" content="/assets/img/icon/ms-icon-144x144.png">
     <meta name="theme-color" content="#ffffff">
-    <title>Login - TKu Demo</title>
+    <title>Product 2 - TKu Demo</title>
     <!-- Bootstrap core CSS-->
     <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
     <!-- Font Awesome-->
@@ -47,7 +47,11 @@
     <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script><![endif]--><!-- Data Layer -->
     <script type="text/javascript">
     var digitalData = digitalData || {};
-    var measure = measure || function(){};</script>
+    var measure = measure || function(){};
+    digitalData.pageType = "product";
+    digitalData.product = "Product 2";
+    digitalData.formId = "Wizard";
+    digitalData.formStep = "1";</script>
     <!-- Tag Manager-->
     <script type="text/javascript" src="/js/measure.js"></script>
     <script type="text/javascript">
@@ -75,12 +79,72 @@
     <div class="container content">
       <ol class="breadcrumb">
         <li><a href="/">Home</a></li>
-        <li class="active">Login</li>
+        <li class="active">Product 2</li>
       </ol>
-      <h1>Login</h1>
+      <h1>Product 2</h1>
       <div>
         <div class="row">
-          <div class="col-md-6"></div>
+          <div class="col-md-6"><p>The description of the Loan.</p>
+</div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="container">
+        <!-- Nav tabs-->
+        <p id="myTabs" role="tablist" class="progress-state clearfix"><span id="step1tab" data-toggle="tab" data-taget="#step1" role="tab" class="step active"><span class="ico">Step 1</span></span><span class="glyphicon glyphicon-arrow-right"></span><span id="step2tab" data-toggle="tab" data-taget="#step2" role="tab" class="step"><span class="ico">Step 2</span></span><span class="glyphicon glyphicon-arrow-right"></span><span id="step3tab" data-toggle="tab" data-taget="#step3" role="tab" class="step"><span class="ico">Success</span></span></p>
+        <!-- Tab panes-->
+        <div class="tab-content">
+          <div id="step1" role="tabpanel" class="tab-pane active panel panel-default">
+            <div class="panel-body">
+              <form id="wizardStep1" role="form">
+                <div class="panel-heading">
+                  <legend class="panel-title">Step 1</legend>
+                </div>
+                <div class="panel-body">
+                  <div class="form-group">
+                    <label for="name" class="control-label">Your Name</label>
+                    <input id="name" type="text" name="name" placeholder="" data-bv-field="text" class="form-control"><i data-bv-icon-for="text" style="" class="form-control-feedback glyphicon glyphicon-remove"></i><span class="help-block">6-30 characters long, not empty (e.g. 123_ab)</span><small data-bv-validator="notEmpty" data-bv-for="text" data-bv-result="VALID" style="display: none;" class="help-block">The text is required and cannot be empty</small><small data-bv-validator="stringLength" data-bv-for="text" data-bv-result="INVALID" style="display: none;" class="help-block">The text must be more than 6 and less than 30 characters long</small>
+                  </div>
+                  <div class="form-group">
+                    <label for="email" class="control-label">Your E-mail</label>
+                    <input id="email" type="text" name="email" placeholder="" data-bv-field="email" class="form-control"><i data-bv-icon-for="email" style="" class="form-control-feedback glyphicon glyphicon-remove"></i><span class="help-block">Email in valid format, not empty (e.g. t@e.st)</span><small data-bv-validator="notEmpty" data-bv-for="email" data-bv-result="INVALID" style="display: none;" class="help-block">The email is required and cannot be empty</small><small data-bv-validator="emailAddress" data-bv-for="email" data-bv-result="VALID" style="display: none;" class="help-block">The input is not a valid email address</small>
+                  </div>
+                  <div class="form-group">
+                    <button type="submit" class="btn btn-primary pull-right">Continue <span class="glyphicon glyphicon-arrow-right"></span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div id="step2" role="tabpanel" class="tab-pane panel panel-default">
+            <div class="panel-body">
+              <form id="wizardStep2" role="form">
+                <div class="panel-heading">
+                  <legend class="panel-title">Step 2</legend>
+                </div>
+                <div class="panel-body">
+                  <div class="form-group">
+                    <label for="topic" class="control-label">Select Topic</label>
+                    <select id="topic" name="topic" class="form-control">
+                      <option>Please select topic...</option>
+                      <option>General</option>
+                      <option>Services</option>
+                      <option>Orders</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <button type="submit" class="btn btn-success pull-right">Submit <span class="glyphicon glyphicon-arrow-right"></span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div id="step3" role="tabpanel" class="tab-pane panel panel-default">
+            <div class="panel-body">Thank You</div>
+          </div>
         </div>
       </div>
     </div>

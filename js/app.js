@@ -1,5 +1,8 @@
+/*global store,jQuery*/
 var dataLayer = dataLayer || [];
-//global jQuery
+var output = output || {};
+output.errors = output.errors || [];
+
 window.btoa = window.btoa || function () {
   var object = typeof exports != 'undefined' ? exports : this; // #8: web workers
   var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
@@ -34,6 +37,55 @@ window.btoa = window.btoa || function () {
       return output;
     });
 };
+
+generatePushID = (function() {
+  // Modeled after base64 web-safe chars, but ordered by ASCII.
+  var PUSH_CHARS = "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
+
+  // Timestamp of last push, used to prevent local collisions if you push twice in one ms.
+  var lastPushTime = 0;
+
+  // We generate 72-bits of randomness which get turned into 12 characters and appended to the
+  // timestamp to prevent collisions with other clients.  We store the last characters we
+  // generated because in the event of a collision, we"ll use those same characters except
+  // "incremented" by one.
+  var lastRandChars = [];
+
+  return function() {
+    var now = new Date().getTime();
+    var duplicateTime = (now === lastPushTime);
+    lastPushTime = now;
+
+    var timeStampChars = new Array(8);
+    for (var i = 7; i >= 0; i--) {
+      timeStampChars[i] = PUSH_CHARS.charAt(now % 64);
+      // NOTE: Can"t use << here because javascript will convert to int and lose the upper bits.
+      now = Math.floor(now / 64);
+    }
+    if (now !== 0) throw new Error("We should have converted the entire timestamp.");
+
+    var id = timeStampChars.join("");
+
+    if (!duplicateTime) {
+      for (i = 0; i < 12; i++) {
+        lastRandChars[i] = Math.floor(Math.random() * 64);
+      }
+    } else {
+      // If the timestamp hasn"t changed since last push, use the same random number, except incremented by 1.
+      for (i = 11; i >= 0 && lastRandChars[i] === 63; i--) {
+        lastRandChars[i] = 0;
+      }
+      lastRandChars[i]++;
+    }
+    for (i = 0; i < 12; i++) {
+      id += PUSH_CHARS.charAt(lastRandChars[i]);
+    }
+    if(id.length != 20) throw new Error("Length should be 20.");
+
+    return id;
+  };
+})();
+
 /* Copyright (c) 2010-2016 Marcus Westin */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.store = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
@@ -86,10 +138,12 @@ window.btoa = window.btoa || function () {
   function login(loggedInUser) {
     var $loginForm;
 
+    store.set("loggedInUser", loggedInUser);
     digitalData.userId = getUserId(loggedInUser);
     $loginForm = $("#loginForm");
     $loginForm.after("<span id=\"loggedInUser\" class=\"navbar-text navbar-right\">Logged in as: <strong>" + loggedInUser + "</strong></span>");
     $loginForm.hide();
+
     $("#loggedInUser").append(" <a id=\"logoutLink\" href=\"javascript:void(0);\">Logout</a>");
     $("#logoutLink").on("click", logout);
   }
@@ -98,7 +152,9 @@ window.btoa = window.btoa || function () {
   function logout() {
     store.remove("loggedInUser");
     $("#loggedInUser").remove();
+
     measure({event: "logout"});
+
     setTimeout(function() {
       location.reload();
     }, 500);
@@ -113,7 +169,6 @@ window.btoa = window.btoa || function () {
     event.preventDefault();
 
     eventData = $(this).serializeObject();
-    store.set("loggedInUser", eventData.username);
     login(eventData.username);
     delete eventData.password;
     eventData.userId = getUserId(eventData.username);
@@ -125,13 +180,30 @@ window.btoa = window.btoa || function () {
     this.reset();
   });
 
-  // Demo itself features
+  $("#subscribeButton").on("click", function(event) {
+    var eventData,
+      $form;
+
+    event.preventDefault();
+
+    $form = $("#subscriptionForm");
+    eventData = $form.serializeObject();
+    eventData.userId = getUserId(eventData.email);
+
+    eventData.formId = "subscriptionForm";
+    eventData.event = "subscriptionSent";
+
+    measure(eventData);
+  });
+
   $("#leadForm").on("submit", function(event) {
     var eventData;
 
     event.preventDefault();
 
     eventData = $(this).serializeObject();
+    eventData.userId = getUserId(eventData.contact);
+
     eventData.formId = "leadForm";
     eventData.event = "leadSent";
 
@@ -168,5 +240,112 @@ window.btoa = window.btoa || function () {
       window.location = linkHref;
     }, 500);
   });
+
+  var $wizardStep1 = $("#wizardStep1");
+  if (typeof $wizardStep1.get(0) !== "undefined") {
+    $wizardStep1.bootstrapValidator({
+      feedbackIcons: {
+        valid: "glyphicon glyphicon-ok",
+        invalid: "glyphicon glyphicon-remove",
+        validating: "glyphicon glyphicon-refresh"
+      },
+      live: "disabled", // only validate submitted form
+      fields: {
+        // Validations configuration
+        name: {
+          validators: {
+            notEmpty: {
+              message: "The text is required and cannot be empty"
+            },
+            stringLength: {
+              min: 6,
+              max: 30,
+              message: "The text must be more than 6 and less than 30 characters long"
+            }
+          }
+        },
+        email: {
+          validators: {
+            notEmpty: {
+              message: "The email is required and cannot be empty"
+            },
+            emailAddress: {
+              message: "The input is not a valid email address"
+            }
+          }
+        }
+      }
+    })
+      .on("error.validator.bv", function(e, data) {
+        var value;
+        switch (data.field) {
+        default:
+          value = data.element[0].value;
+        }
+        output.errors.push({
+          fieldName: data.field,
+          failedRule: data.validator,
+          fieldValue: value
+        });
+      })
+      .on("error.form.bv", function(event) {
+        event.preventDefault();
+
+        output.event = "validationFailed";
+        measure(output);
+        output.errors = [];
+      })
+      .on("success.form.bv", function(event) {
+        var pushId;
+        event.preventDefault();
+
+        output = $(this).serializeObject();
+        output.event = "wizardStep1Sent";
+        output.formId = "Wizard";
+        output.formStep = "1";
+
+        measure(output);
+
+        output.errors = [];
+        $("#step1").hide();
+        $("#step1tab").removeClass("active");
+        $("#step2tab").addClass("active");
+        $("#step2").show();
+      });
+  }
+
+  $("#wizardStep2").on("submit", function(event) {
+    var eventData;
+
+    event.preventDefault();
+
+    eventData = $(this).serializeObject();
+    eventData.formId = "Wizard";
+    eventData.event = "wizardStep2Sent";
+
+    measure(eventData);
+
+    $("#step2").hide();
+    $("#step2tab").removeClass("active");
+    $("#step3tab").addClass("active");
+    $("#step3").show();
+  });
+
+  $("#wizardStep1 :input").change(function(event) {
+    var $target;
+    $target = $(event.target);
+    measure({
+      event: "inputChange",
+      fieldName: $("label[for=" + $target.attr("id") + "]").text(),
+      fieldValue: $target.val()
+    });
+  });
+
+  $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+    measure({
+      event: "tabClick",
+      tabName: $(e.target).text().trim()
+    });
+  })
 
 })(jQuery);
