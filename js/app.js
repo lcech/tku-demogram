@@ -139,7 +139,7 @@ generatePushID = (function() {
     var $loginForm;
 
     store.set("loggedInUser", loggedInUser);
-    digitalData.userId = getUserId(loggedInUser);
+    measure(getUserId(loggedInUser));
     $loginForm = $("#loginForm");
     $loginForm.after("<span id=\"loggedInUser\" class=\"navbar-text navbar-right\">Logged in as: <strong>" + loggedInUser + "</strong></span>");
     $loginForm.hide();
