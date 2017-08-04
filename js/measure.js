@@ -23,7 +23,6 @@ var measure = (function (measure) {
     var digitalDataSnapshot;
     if (typeof data.event !== "undefined") {
       measureInterface._fired = true;
-      measureInterface._process(data);
       digitalData = measureInterface._deepMerge(digitalData, data);
       digitalDataSnapshot = JSON.parse(JSON.stringify(digitalData));
       delete digitalDataSnapshot._log;
@@ -32,6 +31,7 @@ var measure = (function (measure) {
       debug("---------------------------------------------");
       data._timestamp = new Date().getTime();
       digitalData._log.push(data);
+      measureInterface._process(data);
     } else {
       throw "Missing Event ID";
     }
